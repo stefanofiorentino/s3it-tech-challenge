@@ -1,0 +1,23 @@
+language: cpp
+
+compiler:
+    - gcc
+
+before_install:
+    - cd "${TRAVIS_BUILD_DIR}"
+    - git config -f .gitmodules submodule.src/libs/TinyTIFF.branch master
+    - git submodule update --remote --recursive
+    - git submodule foreach --recursive git checkout master
+    - cd src/libs/TinyTIFF/
+    - git config -f .gitmodules submodule.libtiff_tools.branch master
+    - git submodule update --remote --recursive
+    - git submodule foreach --recursive git checkout master
+    - cd ../../../
+
+script:
+    - rm -rf ./build/*
+    - mkdir -p build
+    - cd build
+    - cmake -DCMAKE_BUILD_TYPE=Release ..
+    - make
+    - ./s3it-tech-challenge --channelR=E-cadherin\(Er167Di\).tiff --channelG=HistoneH3\(Yb176Di\).tiff --channelB=Fibronectin\(Dy163Di\).tiff

@@ -12,15 +12,15 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 set(CMAKE_CXX_STANDARD 11)
 
 add_library(lodePNG
-        lodepng/lodepng.cpp)
+        src/libs/lodepng/lodepng.cpp)
 
 add_library(TinyTIFF
-        ./TinyTIFF/tinytiffreader.cpp
-        ./TinyTIFF/tinytiffwriter.cpp)
+        src/libs/TinyTIFF/tinytiffreader.cpp
+        src/libs/TinyTIFF/tinytiffwriter.cpp src/etls/tiff/tiff_decoder.cpp src/etls/tiff/tiff_decoder.h)
 
 include_directories(
-        ./
-        ./TinyTIFF
+        src
+        src/libs/TinyTIFF
 )
-add_executable(s3it-tech-challenge src/main.cpp)
-target_link_libraries(s3it-tech-challenge TinyTIFF lodePNG)
+add_executable(s3it-tech-challenge src/main.cpp src/etls/png/png_decoder.cpp src/etls/png/png_decoder.h)
+target_link_libraries(s3it-tech-challenge TinyTIFF lodePNG tiff boost_program_options)

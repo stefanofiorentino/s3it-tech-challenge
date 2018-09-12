@@ -1,6 +1,9 @@
-[submodule "TinyTIFF"]
-	path = TinyTIFF
+
+[submodule "src/libs/TinyTIFF"]
+	path = src/libs/TinyTIFF
 	url = https://github.com/jkriege2/TinyTIFF
-[submodule "lodepng"]
-	path = lodepng
+	ignore = dirty
+[submodule "src/libs/lodepng"]
+	path = src/libs/lodepng
 	url = https://github.com/lvandeve/lodepng
+	ignore = dirty
