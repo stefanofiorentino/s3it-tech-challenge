@@ -112,9 +112,9 @@ int main(int argc, char *argv[])
 
     encodeOneStep(out_filename, image, width, height);
 
+#ifdef __NODEF__
     std::vector<unsigned char> expected_image;
     unsigned expected_width, expected_height;
     decodeOneStep("../test/expected_results/1.png", expected_image, expected_width, expected_height);
-
-    pause();
+#endif
 }

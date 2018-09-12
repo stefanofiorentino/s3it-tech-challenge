@@ -4,7 +4,6 @@
 
 #include "libs/lodepng/lodepng.h"
 
-
 //Encode from raw pixels to disk with a single function call
 //The image argument has width * height RGBA pixels or width * height * 4 bytes
 void encodeOneStep(const char *filename, std::vector<unsigned char> &image, unsigned width, unsigned height)
