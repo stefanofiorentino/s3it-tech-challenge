@@ -12,7 +12,8 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 set(CMAKE_CXX_STANDARD 11)
 
 include_directories(
-        src
+        ./
+        ./src
 )
 
 add_library(lodePNG
@@ -29,3 +30,11 @@ add_executable(
 )
 
 target_link_libraries(s3it-tech-challenge lodePNG tiff boost_program_options)
+
+find_package(Catch2 REQUIRED)
+add_executable(foo test/tests.cpp)
+target_link_libraries(foo Catch2::Catch2)
+
+include(CTest)
+include(Catch)
+catch_discover_tests(foo)
