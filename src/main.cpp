@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
         std::cout << std::endl;
     }
 
-    auto const &out_filename = "test.png";
+    std::string out_filename = "test.png";
 
     std::vector<unsigned char> image;
     image.resize(width * height * 4);
@@ -98,23 +98,49 @@ int main(int argc, char *argv[])
         for (unsigned x = 0; x < width; x++)
         {
             image[4 * width * y + 4 * x + 0] = static_cast<uint8_t >(
-                    (images.at(0).at(width * y + x) - channel_min.at(0)) / static_cast<float>(channel_max.at(0) / 10) *
-                    255);
+                    (images.at(0).at(width * y + x) - channel_min.at(0)) / static_cast<float>(channel_max.at(0)) * 255);
             image[4 * width * y + 4 * x + 1] = static_cast<uint8_t >(
-                    (images.at(1).at(width * y + x) - channel_min.at(1)) / static_cast<float>(channel_max.at(1) / 10) *
-                    255);
+                    (images.at(1).at(width * y + x) - channel_min.at(1)) / static_cast<float>(channel_max.at(1)) * 255);
             image[4 * width * y + 4 * x + 2] = static_cast<uint8_t >(
-                    (images.at(2).at(width * y + x) - channel_min.at(2)) / static_cast<float>(channel_max.at(2) / 10) *
-                    255);
+                    (images.at(2).at(width * y + x) - channel_min.at(2)) / static_cast<float>(channel_max.at(2)) * 255);
             image[4 * width * y + 4 * x + 3] = 255;
         }
     }
 
-    encodeOneStep(out_filename, image, width, height);
+    encodeOneStep(out_filename.c_str(), image, width, height);
 
 #ifdef __NODEF__
     std::vector<unsigned char> expected_image;
     unsigned expected_width, expected_height;
     decodeOneStep("../test/expected_results/1.png", expected_image, expected_width, expected_height);
 #endif
+
+//#######################################################  2
+
+    const char *single_cell_mask_filename = "../data/single-cell-mask/single_cell_mask.tiff";
+
+    std::vector<uint16_t> single_cell_mask;
+    unsigned single_cell_mask_width, single_cell_mask_height;
+    readMASK(single_cell_mask_filename, single_cell_mask, single_cell_mask_width, single_cell_mask_height);
+
+    if (width == single_cell_mask_width && height == single_cell_mask_height)
+    {
+        for (unsigned y = 0; y < height; y++)
+        {
+            for (unsigned x = 0; x < width; x++)
+            {
+                if (single_cell_mask.at(width * y + x))
+                {
+                    image[4 * width * y + 4 * x + 3] = 255;
+                }
+                else
+                {
+                    image[4 * width * y + 4 * x + 3] = 0;
+                }
+            }
+        }
+
+        std::string single_cell_mask_output_filename("test2.png");
+        encodeOneStep(single_cell_mask_output_filename, image, width, height);
+    }
 }
