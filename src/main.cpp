@@ -7,6 +7,7 @@
 
 #include <etls/tiff/tiff_decoder.h>
 #include <etls/png/png_decoder.h>
+#include <fstream>
 
 using namespace boost::program_options;
 
@@ -119,16 +120,21 @@ int main(int argc, char *argv[])
 
     const char *single_cell_mask_filename = "../data/single-cell-mask/single_cell_mask.tiff";
 
-    std::vector<uint16_t> single_cell_mask;
-    unsigned single_cell_mask_width, single_cell_mask_height;
-    readMASK(single_cell_mask_filename, single_cell_mask, single_cell_mask_width, single_cell_mask_height);
+    std::vector<uint8_t> single_cell_mask;
+    unsigned single_cell_mask_width, single_cell_mask_height, n_cells;
+    readSingleChannelMask(single_cell_mask_filename, single_cell_mask, single_cell_mask_width, single_cell_mask_height);
 
     if (width == single_cell_mask_width && height == single_cell_mask_height)
     {
+        std::cout << "import matplotlib.pyplot as plt" << std::endl;
+        std::cout << "import numpy as np" << std::endl;
+        std::cout << "img = np.array([";
         for (unsigned y = 0; y < height; y++)
         {
+            std::cout << "[";
             for (unsigned x = 0; x < width; x++)
             {
+                std::cout << (int) single_cell_mask.at(width * y + x) << ", ";
                 if (single_cell_mask.at(width * y + x))
                 {
                     image[4 * width * y + 4 * x + 3] = 255;
@@ -138,9 +144,65 @@ int main(int argc, char *argv[])
                     image[4 * width * y + 4 * x + 3] = 0;
                 }
             }
+            std::cout << "]," << std::endl;
         }
-
+        std::cout << "], dtype='uint8')" << std::endl;
+        std::cout << "plt.imshow(img)" << std::endl;
+        std::cout << "plt.show()" << std::endl;
         std::string single_cell_mask_output_filename("test2.png");
         encodeOneStep(single_cell_mask_output_filename, image, width, height);
     }
+
+    //#######################################################  3
+    // get how many valid mask values are there
+    unsigned n_sample_mask = 0u;
+    std::vector<double> mean(3, 0.0);
+
+    for (unsigned y = 0; y < height; y++)
+    {
+        for (unsigned x = 0; x < width; x++)
+        {
+            if (255 == image[4 * width * y + 4 * x + 3])
+            {
+                n_sample_mask++;
+                auto a = mean[0];
+                auto b = image[4 * width * y + 4 * x + 0];
+                if (a > 0 && b > std::numeric_limits<uint64_t>::max() - a)
+                {
+                    std::cout << "overflow";
+                }
+                mean[0] += image[4 * width * y + 4 * x + 0];
+
+                a = mean[1];
+                b = image[4 * width * y + 4 * x + 1];
+                if (a > 0 && b > std::numeric_limits<uint64_t>::max() - a)
+                {
+                    std::cout << "overflow";
+                }
+                mean[1] += image[4 * width * y + 4 * x + 1];
+
+                a = mean[0];
+                b = image[4 * width * y + 4 * x + 2];
+                if (a > 0 && b > std::numeric_limits<uint64_t>::max() - a)
+                {
+                    std::cout << "overflow";
+                }
+                mean[2] += image[4 * width * y + 4 * x + 2];
+            }
+        }
+    }
+
+    double mean_d[3];
+    for (unsigned k = 0; k < 3; k++)
+    {
+        mean_d[k] = 1.0 * mean[k] / n_sample_mask;
+    }
+
+    std::ofstream out("test.csv");
+    out << "Cell_id\t" << "channel#1\t" << "channel#2\t" << "channel#3" << std::endl;
+    for (unsigned channel = 0; channel < 3; channel++)
+    {
+        out << channel << "\t" << mean_d[0] << "\t" << mean_d[1] << "\t" << mean_d[2] << std::endl;
+    }
+    out.close();
 }

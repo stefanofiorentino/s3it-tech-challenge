@@ -47,7 +47,43 @@ void readTIFF(std::string const &filename, std::vector<uint16_t> &image_out, uin
 }
 
 
-void readMASK(std::string const &filename, std::vector<uint16_t> &image_out, uint32_t &width, uint32_t &height)
+void readMASK(std::string const &filename, std::vector<std::vector<uint8_t>> &image_out, uint32_t &w, uint32_t &h)
+{
+    TIFF *tif = TIFFOpen(filename.c_str(), "r");
+    if (tif)
+    {
+        size_t npixels;
+        uint32 *raster;
+
+        TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &w);
+        TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &h);
+        npixels = w * h;
+        raster = (uint32 *) _TIFFmalloc(npixels * sizeof(uint32));
+        if (raster != NULL)
+        {
+            if (TIFFReadRGBAImage(tif, w, h, raster, 0))
+            {
+                for (unsigned channel = 0; channel < 4; channel++)
+                {
+                    image_out.emplace_back(std::vector<uint8_t>());
+                    image_out.at(channel).resize(npixels);
+                    for (unsigned y = 0; y < h; y++)
+                    {
+                        for (unsigned x = 0; x < w; x++)
+                        {
+                            image_out[channel][w * y + x] = ((uint8_t *)raster)[4*w * y + 4*x+channel];
+                        }
+                    }
+                }
+            }
+            _TIFFfree(raster);
+        }
+        TIFFClose(tif);
+    }
+}
+
+void readSingleChannelMask(std::string const &filename, std::vector<uint8_t> &image_out, uint32_t &width,
+                           uint32_t &height)
 {
     TIFF *tif = TIFFOpen(filename.c_str(), "r");
     if (tif)
