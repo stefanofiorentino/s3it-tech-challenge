@@ -8,9 +8,12 @@ install:
     - sudo apt install libtiff5-dev
     - sudo apt install cmake
     - sudo apt install libboost-all-dev
-    - sudo apt install Catch2
 
 script:
+    - cd test/libs/Catch2
+    - mkdir -p build && cd build
+    - make && sudo make install
+    - cd ../../../
     - rm -rf ./build/*
     - mkdir -p build
     - cd build
