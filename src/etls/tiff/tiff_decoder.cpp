@@ -27,12 +27,10 @@ void readTIFF(std::string const &filename, std::vector<uint16_t> &image_out, uin
 
         auto buf = static_cast<unsigned char *>(_TIFFmalloc(slSize));
 
-        int row;
-        for (row = 0; row < height; row++)
+        for (auto row = 0u; row < height; row++)
         {
             TIFFReadScanline(tif, buf, row, 0);
-            int col;
-            for (col = 0; col < width; col++)
+            for (auto col = 0u; col < width; col++)
             {
                 uint16_t val = 0;
                 val |= buf[2 * col];
@@ -71,7 +69,7 @@ void readMASK(std::string const &filename, std::vector<std::vector<uint8_t>> &im
                     {
                         for (unsigned x = 0; x < w; x++)
                         {
-                            image_out[channel][w * y + x] = ((uint8_t *)raster)[4*w * y + 4*x+channel];
+                            image_out[channel][w * y + x] = ((uint8_t *) raster)[4 * w * y + 4 * x + channel];
                         }
                     }
                 }
@@ -82,8 +80,8 @@ void readMASK(std::string const &filename, std::vector<std::vector<uint8_t>> &im
     }
 }
 
-void readSingleChannelMask(std::string const &filename, std::vector<uint8_t> &image_out, uint32_t &width,
-                           uint32_t &height)
+void
+readSingleChannelMask(std::string const &filename, std::vector<uint8_t> &image_out, uint32_t &width, uint32_t &height)
 {
     TIFF *tif = TIFFOpen(filename.c_str(), "r");
     if (tif)
@@ -105,8 +103,7 @@ void readSingleChannelMask(std::string const &filename, std::vector<uint8_t> &im
 
         auto buf = static_cast<unsigned char *>(_TIFFmalloc(slSize));
 
-        int row;
-        for (row = 0; row < height; row++)
+        for (auto row = 0u; row < height; row++)
         {
             TIFFReadScanline(tif, buf, row, 0);
             int col;

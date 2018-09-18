@@ -12,9 +12,12 @@ mkdir -p build && cd build
 
 cmake ..
 
-make 
+make s3it-tech-challenge
 
-./s3it-tech-challenge \
-    --channelR=E-cadherin\(Er167Di\).tiff \
-    --channelG=HistoneH3\(Yb176Di\).tiff \
-    --channelB=Fibronectin\(Dy163Di\).tiff
+cd ..
+
+./build/s3it-tech-challenge \
+    --rChannel ./data/images/E-cadherin\(Er167Di\).tiff \
+    --bChannel ./data/images/Fibronectin\(Dy163Di\).tiff \
+    --gChannel ./data/images/HistoneH3\(Yb176Di\).tiff \
+    --single_cell_mask ./data/single-cell-mask/single_cell_mask.tiff
