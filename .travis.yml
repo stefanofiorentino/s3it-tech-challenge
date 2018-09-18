@@ -12,6 +12,7 @@ install:
 script:
     - cd test/libs/Catch2
     - mkdir -p build && cd build
+    - cmake ..
     - make && sudo make install
     - cd ../../../
     - rm -rf ./build/*
