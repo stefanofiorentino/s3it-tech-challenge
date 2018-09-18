@@ -18,39 +18,60 @@ void on_age(int age)
 
 int main(int argc, char *argv[])
 {
+    std::vector<std::string> input_filename;
+    std::string single_cell_mask_filename;
+
     try
     {
         options_description desc{"Options"};
-        desc.add_options()("help,h", "Help screen")("pi", value<float>()->default_value(3.14f), "Pi")("age",
-                                                                                                      value<int>()->notifier(
-                                                                                                              on_age),
-                                                                                                      "Age");
-
+        desc.add_options()("help,h", "Help screen")("rChannel", value<std::string>()->default_value(
+                "../data/images/E-cadherin(Er167Di).tiff"), "../data/images/E-cadherin(Er167Di).tiff")("gChannel",
+                                                                                                       value<std::string>()->default_value(
+                                                                                                               "../data/images/Fibronectin(Dy163Di).tiff"),
+                                                                                                       "../data/images/Fibronectin(Dy163Di).tiff")(
+                "bChannel", value<std::string>()->default_value("../data/images/HistoneH3(Yb176Di).tiff"),
+                "../data/images/HistoneH3(Yb176Di).tiff")("single_cell_mask", value<std::string>()->default_value(
+                "../data/single-cell-mask/single_cell_mask.tiff"), "../data/single-cell-mask/single_cell_mask.tiff");
         variables_map vm;
+
+        store(parse_command_line(argc, argv, desc), vm);
 
         if (vm.count("help"))
         {
             std::cout << desc << '\n';
+            exit(1);
         }
-        else if (vm.count("age"))
+        if (vm.count("rChannel"))
         {
-            std::cout << "Age: " << vm["age"].as<int>() << '\n';
+            std::cout << "rChannel: " << vm["rChannel"].as<std::string>() << '\n';
         }
-        else if (vm.count("pi"))
+        if (vm.count("gChannel"))
         {
-            std::cout << "Pi: " << vm["pi"].as<float>() << '\n';
+            std::cout << "gChannel: " << vm["gChannel"].as<std::string>() << '\n';
         }
-        store(parse_command_line(argc, argv, desc), vm);
-        notify(vm);
+        if (vm.count("bChannel"))
+        {
+            std::cout << "bChannel: " << vm["bChannel"].as<std::string>() << '\n';
+        }
+        if (vm.count("bChannel"))
+        {
+            std::cout << "bChannel: " << vm["bChannel"].as<std::string>() << '\n';
+        }
+        if (vm.count("single_cell_mask"))
+        {
+            std::cout << "single_cell_mask: " << vm["single_cell_mask"].as<std::string>() << '\n';
+        }
+
+        input_filename.emplace_back(vm["rChannel"].as<std::string>());
+        input_filename.emplace_back(vm["gChannel"].as<std::string>());
+        input_filename.emplace_back(vm["bChannel"].as<std::string>());
+        single_cell_mask_filename = vm["single_cell_mask"].as<std::string>();
     }
     catch (const error &ex)
     {
         std::cerr << ex.what() << '\n';
+        exit(1);
     }
-
-    std::vector<std::string> const &input_filename = {"../data/images/E-cadherin(Er167Di).tiff",
-                                                      "../data/images/Fibronectin(Dy163Di).tiff",
-                                                      "../data/images/HistoneH3(Yb176Di).tiff"};
 
     std::vector<std::vector<uint16_t>> images;
 
@@ -69,7 +90,6 @@ int main(int argc, char *argv[])
     {
         channel_max[frame] = 0;
         channel_min[frame] = std::numeric_limits<uint16_t>::max();
-        std::cout << "--------------------------------------------------------------------------" << std::endl;
         for (unsigned y = 0; y < height; y++)
         {
             for (unsigned x = 0; x < width; x++)
@@ -82,11 +102,8 @@ int main(int argc, char *argv[])
                 {
                     channel_min[frame] = images.at(frame).at(width * y + x);
                 }
-                std::cout << images.at(frame).at(width * y + x) << ", ";
             }
-            std::cout << std::endl;
         }
-        std::cout << std::endl;
     }
 
     std::string out_filename = "test.png";
@@ -118,10 +135,8 @@ int main(int argc, char *argv[])
 
 //#######################################################  2
 
-    const char *single_cell_mask_filename = "../data/single-cell-mask/single_cell_mask.tiff";
-
     std::vector<uint8_t> single_cell_mask;
-    unsigned single_cell_mask_width, single_cell_mask_height, n_cells;
+    unsigned single_cell_mask_width, single_cell_mask_height;
     readSingleChannelMask(single_cell_mask_filename, single_cell_mask, single_cell_mask_width, single_cell_mask_height);
 
     if (width == single_cell_mask_width && height == single_cell_mask_height)
