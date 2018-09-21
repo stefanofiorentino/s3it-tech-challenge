@@ -8,6 +8,7 @@
 #include <etls/tiff/tiff_decoder.h>
 #include <etls/png/png_decoder.h>
 #include <fstream>
+#include <numeric>
 
 using namespace boost::program_options;
 
@@ -170,54 +171,70 @@ int main(int argc, char *argv[])
 
     //#######################################################  3
     // get how many valid mask values are there
-    unsigned n_sample_mask = 0u;
-    std::vector<double> mean(3, 0.0);
+//    std::map<std::string, std::map<uint16_t, double> > mean_by_color;
+    std::vector<double> rMean_by_cell_id;
+    std::vector<double> gMean_by_cell_id;
+    std::vector<double> bMean_by_cell_id;
 
+    std::vector<uint16_t> cells_mask;
+    readTIFF("../data/cells-mask/cells_mask.tiff", cells_mask, width, height);
+
+
+    std::vector<uint16_t> cell_id;
     for (unsigned y = 0; y < height; y++)
     {
         for (unsigned x = 0; x < width; x++)
         {
-            if (255 == image[4 * width * y + 4 * x + 3])
+            auto cell_id_at_current_position = cells_mask.at(width * y + x);
+            if (cell_id_at_current_position > 0)
             {
-                n_sample_mask++;
-                auto a = mean[0];
-                auto b = image[4 * width * y + 4 * x + 0];
-                if (a > 0 && b > std::numeric_limits<uint64_t>::max() - a)
+                if (std::find(cell_id.cbegin(), cell_id.cend(), cell_id_at_current_position) ==
+                    cell_id.cend()) // cells_id doesn't contain cells_mask value
                 {
-                    std::cout << "overflow";
-                }
-                mean[0] += image[4 * width * y + 4 * x + 0];
+                    // add cell_id to vector to avoid duplicates
+                    cell_id.emplace_back(cell_id_at_current_position);
 
-                a = mean[1];
-                b = image[4 * width * y + 4 * x + 1];
-                if (a > 0 && b > std::numeric_limits<uint64_t>::max() - a)
-                {
-                    std::cout << "overflow";
+                    // create rChannel vector belonging to this cell_id
+                    std::vector<uint16_t> rChannel_by_cell_id;
+                    std::vector<uint16_t> gChannel_by_cell_id;
+                    std::vector<uint16_t> bChannel_by_cell_id;
+                    for (unsigned y1 = 0; y1 < height; y1++)
+                    {
+                        for (unsigned x1 = 0; x1 < width; x1++)
+                        {
+                            if (cells_mask.at(width * y1 + x1) == cell_id_at_current_position)
+                            {
+                                std::cout << "x: " << x << ", y: " << y << ", x1: " << x1 << ", y1: " << y1
+                                          << std::endl;
+                                rChannel_by_cell_id.emplace_back(image[4 * width * y1 + 4 * x1 + 0]);
+                                gChannel_by_cell_id.emplace_back(image[4 * width * y1 + 4 * x1 + 1]);
+                                bChannel_by_cell_id.emplace_back(image[4 * width * y1 + 4 * x1 + 2]);
+                            }
+                        }
+                    }
+                    rMean_by_cell_id.emplace_back(static_cast<double>(std::accumulate(rChannel_by_cell_id.cbegin(), rChannel_by_cell_id.cend(), 0.0)) / rChannel_by_cell_id.size());
+                    gMean_by_cell_id.emplace_back(static_cast<double>(std::accumulate(gChannel_by_cell_id.cbegin(), gChannel_by_cell_id.cend(), 0.0)) / gChannel_by_cell_id.size());
+                    bMean_by_cell_id.emplace_back(static_cast<double>(std::accumulate(bChannel_by_cell_id.cbegin(), bChannel_by_cell_id.cend(), 0.0)) / bChannel_by_cell_id.size());
                 }
-                mean[1] += image[4 * width * y + 4 * x + 1];
-
-                a = mean[0];
-                b = image[4 * width * y + 4 * x + 2];
-                if (a > 0 && b > std::numeric_limits<uint64_t>::max() - a)
-                {
-                    std::cout << "overflow";
-                }
-                mean[2] += image[4 * width * y + 4 * x + 2];
             }
+
         }
     }
 
-    double mean_d[3];
-    for (unsigned k = 0; k < 3; k++)
-    {
-        mean_d[k] = 1.0 * mean[k] / n_sample_mask;
-    }
 
     std::ofstream out("test.csv");
     out << "Cell_id\t" << "channel#1\t" << "channel#2\t" << "channel#3" << std::endl;
-    for (unsigned channel = 0; channel < 3; channel++)
+    if (cell_id.size() != rMean_by_cell_id.size())
     {
-        out << channel << "\t" << mean_d[0] << "\t" << mean_d[1] << "\t" << mean_d[2] << std::endl;
+        out << "Error: dimension mismatch." << std::endl;
+        out.close();
+        return 1;
+    }
+    std::cout << "Cell_id\t" << "channel#1\t" << "channel#2\t" << "channel#3" << std::endl;
+    for (unsigned cell = 0u; cell < cell_id.size(); cell++)
+    {
+        out << cell_id.at(cell) << "\t" << rMean_by_cell_id.at(cell) << "\t" << gMean_by_cell_id.at(cell)  << "\t" << bMean_by_cell_id.at(cell)  << std::endl;
+        std::cout << cell_id.at(cell) << "\t" << rMean_by_cell_id.at(cell) << "\t" << gMean_by_cell_id.at(cell)  << "\t" << bMean_by_cell_id.at(cell)  << std::endl;
     }
     out.close();
 }
