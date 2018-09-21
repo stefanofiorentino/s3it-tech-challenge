@@ -171,14 +171,13 @@ int main(int argc, char *argv[])
 
     //#######################################################  3
     // get how many valid mask values are there
-//    std::map<std::string, std::map<uint16_t, double> > mean_by_color;
-    std::vector<double> rMean_by_cell_id;
-    std::vector<double> gMean_by_cell_id;
-    std::vector<double> bMean_by_cell_id;
+    std::map<std::string, std::map<uint16_t, double> > mean_by_color_by_cell_id;
+//    std::vector<double> rMean_by_cell_id;
+//    std::vector<double> gMean_by_cell_id;
+//    std::vector<double> bMean_by_cell_id;
 
     std::vector<uint16_t> cells_mask;
     readTIFF("../data/cells-mask/cells_mask.tiff", cells_mask, width, height);
-
 
     std::vector<uint16_t> cell_id;
     for (unsigned y = 0; y < height; y++)
@@ -212,9 +211,9 @@ int main(int argc, char *argv[])
                             }
                         }
                     }
-                    rMean_by_cell_id.emplace_back(static_cast<double>(std::accumulate(rChannel_by_cell_id.cbegin(), rChannel_by_cell_id.cend(), 0.0)) / rChannel_by_cell_id.size());
-                    gMean_by_cell_id.emplace_back(static_cast<double>(std::accumulate(gChannel_by_cell_id.cbegin(), gChannel_by_cell_id.cend(), 0.0)) / gChannel_by_cell_id.size());
-                    bMean_by_cell_id.emplace_back(static_cast<double>(std::accumulate(bChannel_by_cell_id.cbegin(), bChannel_by_cell_id.cend(), 0.0)) / bChannel_by_cell_id.size());
+                    mean_by_color_by_cell_id["R"][cell_id_at_current_position] = std::accumulate(rChannel_by_cell_id.cbegin(), rChannel_by_cell_id.cend(), 0.0) / rChannel_by_cell_id.size();
+                    mean_by_color_by_cell_id["G"][cell_id_at_current_position] = std::accumulate(gChannel_by_cell_id.cbegin(), gChannel_by_cell_id.cend(), 0.0) / gChannel_by_cell_id.size();
+                    mean_by_color_by_cell_id["B"][cell_id_at_current_position] = std::accumulate(bChannel_by_cell_id.cbegin(), bChannel_by_cell_id.cend(), 0.0) / bChannel_by_cell_id.size();
                 }
             }
 
@@ -224,17 +223,18 @@ int main(int argc, char *argv[])
 
     std::ofstream out("test.csv");
     out << "Cell_id\t" << "channel#1\t" << "channel#2\t" << "channel#3" << std::endl;
-    if (cell_id.size() != rMean_by_cell_id.size())
+    if (cell_id.size() != mean_by_color_by_cell_id["R"].size())
     {
         out << "Error: dimension mismatch." << std::endl;
         out.close();
         return 1;
     }
     std::cout << "Cell_id\t" << "channel#1\t" << "channel#2\t" << "channel#3" << std::endl;
-    for (unsigned cell = 0u; cell < cell_id.size(); cell++)
+    for (auto const& pair : mean_by_color_by_cell_id["R"])
     {
-        out << cell_id.at(cell) << "\t" << rMean_by_cell_id.at(cell) << "\t" << gMean_by_cell_id.at(cell)  << "\t" << bMean_by_cell_id.at(cell)  << std::endl;
-        std::cout << cell_id.at(cell) << "\t" << rMean_by_cell_id.at(cell) << "\t" << gMean_by_cell_id.at(cell)  << "\t" << bMean_by_cell_id.at(cell)  << std::endl;
+        auto const& cell = pair.first;
+        out << cell << "\t" << mean_by_color_by_cell_id["R"].at(cell) << "\t" << mean_by_color_by_cell_id["G"].at(cell)  << "\t" << mean_by_color_by_cell_id["B"].at(cell)  << std::endl;
+        std::cout << cell << "\t" << mean_by_color_by_cell_id["R"].at(cell) << "\t" << mean_by_color_by_cell_id["G"].at(cell)  << "\t" << mean_by_color_by_cell_id["B"].at(cell)  << std::endl;
     }
     out.close();
 }
