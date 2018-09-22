@@ -142,15 +142,21 @@ int main(int argc, char *argv[])
 
     if (width == single_cell_mask_width && height == single_cell_mask_height)
     {
+#ifdef __NODEF__
         std::cout << "import matplotlib.pyplot as plt" << std::endl;
         std::cout << "import numpy as np" << std::endl;
         std::cout << "img = np.array([";
+#endif
         for (unsigned y = 0; y < height; y++)
         {
+#ifdef __NODEF__
             std::cout << "[";
+#endif
             for (unsigned x = 0; x < width; x++)
             {
+#ifdef __NODEF__
                 std::cout << (int) single_cell_mask.at(width * y + x) << ", ";
+#endif
                 if (single_cell_mask.at(width * y + x))
                 {
                     image[4 * width * y + 4 * x + 3] = 255;
@@ -160,11 +166,15 @@ int main(int argc, char *argv[])
                     image[4 * width * y + 4 * x + 3] = 0;
                 }
             }
+#ifdef __NODEF__
             std::cout << "]," << std::endl;
+#endif
         }
+#ifdef __NODEF__
         std::cout << "], dtype='uint8')" << std::endl;
         std::cout << "plt.imshow(img)" << std::endl;
         std::cout << "plt.show()" << std::endl;
+#endif
         std::string single_cell_mask_output_filename("test2.png");
         encodeOneStep(single_cell_mask_output_filename, image, width, height);
     }
@@ -172,9 +182,6 @@ int main(int argc, char *argv[])
     //#######################################################  3
     // get how many valid mask values are there
     std::map<std::string, std::map<uint16_t, double> > mean_by_color_by_cell_id;
-//    std::vector<double> rMean_by_cell_id;
-//    std::vector<double> gMean_by_cell_id;
-//    std::vector<double> bMean_by_cell_id;
 
     std::vector<uint16_t> cells_mask;
     readTIFF("../data/cells-mask/cells_mask.tiff", cells_mask, width, height);
@@ -203,8 +210,10 @@ int main(int argc, char *argv[])
                         {
                             if (cells_mask.at(width * y1 + x1) == cell_id_at_current_position)
                             {
+#ifdef __NODEF__
                                 std::cout << "x: " << x << ", y: " << y << ", x1: " << x1 << ", y1: " << y1
                                           << std::endl;
+#endif
                                 rChannel_by_cell_id.emplace_back(image[4 * width * y1 + 4 * x1 + 0]);
                                 gChannel_by_cell_id.emplace_back(image[4 * width * y1 + 4 * x1 + 1]);
                                 bChannel_by_cell_id.emplace_back(image[4 * width * y1 + 4 * x1 + 2]);
@@ -229,12 +238,16 @@ int main(int argc, char *argv[])
         out.close();
         return 1;
     }
+#ifdef __NODEF__
     std::cout << "Cell_id\t" << "channel#1\t" << "channel#2\t" << "channel#3" << std::endl;
+#endif
     for (auto const& pair : mean_by_color_by_cell_id["R"])
     {
         auto const& cell = pair.first;
         out << cell << "\t" << mean_by_color_by_cell_id["R"].at(cell) << "\t" << mean_by_color_by_cell_id["G"].at(cell)  << "\t" << mean_by_color_by_cell_id["B"].at(cell)  << std::endl;
+#ifdef __NODEF__
         std::cout << cell << "\t" << mean_by_color_by_cell_id["R"].at(cell) << "\t" << mean_by_color_by_cell_id["G"].at(cell)  << "\t" << mean_by_color_by_cell_id["B"].at(cell)  << std::endl;
+#endif
     }
     out.close();
 }
