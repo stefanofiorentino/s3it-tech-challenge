@@ -93,22 +93,8 @@ int main(int argc, char *argv[])
     channel_min.resize(3);
     for (unsigned frame = 0; frame < 3; frame++)
     {
-        channel_max[frame] = 0;
-        channel_min[frame] = std::numeric_limits<uint16_t>::max();
-        for (unsigned y = 0; y < height; y++)
-        {
-            for (unsigned x = 0; x < width; x++)
-            {
-                if (images.at(frame).at(width * y + x) > channel_max.at(frame))
-                {
-                    channel_max[frame] = images.at(frame).at(width * y + x);
-                }
-                if (images.at(frame).at(width * y + x) < channel_min.at(frame))
-                {
-                    channel_min[frame] = images.at(frame).at(width * y + x);
-                }
-            }
-        }
+        channel_max[frame] = *std::max_element(images.at(frame).cbegin(), images.at(frame).cend());
+        channel_min[frame] = *std::min_element(images.at(frame).cbegin(), images.at(frame).cend());
     }
 
     std::string out_filename = "1_output.png";
