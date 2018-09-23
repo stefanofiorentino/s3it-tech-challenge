@@ -53,10 +53,21 @@ After installing the dependencies as brew recipe, the software is fully compatib
 The windows user should be able to build in Visual Studio just by installing dependencies with NuGET and producing the solution file with 
 > cmake -G "Visual Studio 11 2012" ../
 
+## Docker 
+Are you onto a Mac or Windows machine and haven't experience with cmake? Inside the test folder you'll find a convenient Dockerfile you can build the product just entering in the commandline
+> cd test
+> docker build -t s3it-tech-challenge .
+> docker run --name s3it s3it
+
 ## Software APIs
 A fully portable API structure is under investigation. 
 
 A SWIG based interface is created in order to port the libraries to Java, Node.js and Python.
+
+The example can be found in the file
+> src/solutions/calculate_channel_mean/swig/calculate_channel_mean.i
+
+Working in this way, every ported version of the library is based on the same C++ codebase, so clients and developers can refer to a single reference documentation, jira dashboard, continuous integration report and git issues repository. 
 
 ## Restful web APIs
 A restful API structure is under investigation. 
