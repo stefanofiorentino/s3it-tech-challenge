@@ -8,8 +8,11 @@
 extern "C" {
 #endif
 
-void encodeOneStep(std::string const& filename, std::vector<unsigned char> &image, unsigned width, unsigned height);
-void decodeOneStep(std::string const& filename, std::vector<unsigned char> &image, unsigned &width, unsigned &height);
+void prepareForPNGEncoder(std::vector<unsigned char> &image, std::vector<std::vector<uint16_t>> const &images,
+                          uint16_t width, uint16_t height, std::vector<uint16_t> const &channel_max,
+                          std::vector<uint16_t> const &channel_min);
+void encodeOneStep(std::string const &filename, std::vector<unsigned char> &image, unsigned width, unsigned height);
+void decodeOneStep(std::string const &filename, std::vector<unsigned char> &image, unsigned &width, unsigned &height);
 
 #ifdef __cplusplus
 };

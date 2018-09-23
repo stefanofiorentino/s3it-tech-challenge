@@ -1,14 +1,15 @@
 #include <iostream>
 #include <vector>
 #include <cmath>
+#include <fstream>
+#include <numeric>
 #include <limits>
 
 #include <boost/program_options.hpp>
 
 #include <etls/tiff/tiff_decoder.h>
 #include <etls/png/png_decoder.h>
-#include <fstream>
-#include <numeric>
+
 #include "solutions/calculate_channel_mean/calculate_channel_mean.h"
 
 int main(int argc, char *argv[])
@@ -78,13 +79,25 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    std::vector<std::vector<uint16_t>> images;
+    /**
+     * 1. Implement a channel overlay.
+     * Overlay the 3 channels in a single RGB image where each color R,G,B, corresponds to the intensity of each single
+     * channel.
+     * Save the overlay image in .png format on a local filesystem.
+     * Input
+     * input data are found in ./data/images
+     *      HistoneH3(Yb176Di).tiff
+     *      E-cadherin(Er167Di).tiff
+     *      Fibronectin(Dy163Di).tiff
+     */
+
+    std::vector<std::vector<uint16_t>> tiff_layers;
 
     uint32_t width, height;
     for (auto frame = 0u; frame < 3u; ++frame)
     {
-        images.emplace_back(std::vector<uint16_t>());
-        readTIFF(input_filename.at(frame), images[frame], width, height);
+        tiff_layers.emplace_back(std::vector<uint16_t>());
+        readTIFF(input_filename.at(frame), tiff_layers[frame], width, height);
     }
 
     std::vector<uint16_t> channel_max;
@@ -93,30 +106,18 @@ int main(int argc, char *argv[])
     channel_min.resize(3);
     for (unsigned frame = 0; frame < 3; frame++)
     {
-        channel_max[frame] = *std::max_element(images.at(frame).cbegin(), images.at(frame).cend());
-        channel_min[frame] = *std::min_element(images.at(frame).cbegin(), images.at(frame).cend());
+        channel_max[frame] = *std::max_element(tiff_layers.at(frame).cbegin(), tiff_layers.at(frame).cend());
+        channel_min[frame] = *std::min_element(tiff_layers.at(frame).cbegin(), tiff_layers.at(frame).cend());
     }
 
     std::string out_filename = "1_output.png";
 
-    std::vector<unsigned char> image;
-    image.resize(width * height * 4);
+    std::vector<unsigned char> out_image_for_png;
+    out_image_for_png.resize(width * height * 4);
 
-    for (unsigned y = 0; y < height; y++)
-    {
-        for (unsigned x = 0; x < width; x++)
-        {
-            image[4 * width * y + 4 * x + 0] = static_cast<uint8_t >(
-                    (images.at(0).at(width * y + x) - channel_min.at(0)) / static_cast<float>(channel_max.at(0)) * 255);
-            image[4 * width * y + 4 * x + 1] = static_cast<uint8_t >(
-                    (images.at(1).at(width * y + x) - channel_min.at(1)) / static_cast<float>(channel_max.at(1)) * 255);
-            image[4 * width * y + 4 * x + 2] = static_cast<uint8_t >(
-                    (images.at(2).at(width * y + x) - channel_min.at(2)) / static_cast<float>(channel_max.at(2)) * 255);
-            image[4 * width * y + 4 * x + 3] = 255;
-        }
-    }
+    prepareForPNGEncoder(out_image_for_png, tiff_layers, width, height, channel_max, channel_min);
 
-    encodeOneStep(out_filename, image, width, height);
+    encodeOneStep(out_filename, out_image_for_png, width, height);
 
 #ifdef __NODEF__
     std::vector<unsigned char> expected_image;
@@ -124,7 +125,17 @@ int main(int argc, char *argv[])
     decodeOneStep("../test/expected_results/1.png", expected_image, expected_width, expected_height);
 #endif
 
-//#######################################################  2
+
+    /**
+     * Highlight single cells
+     * Given a single cell segmentation mask image, overlay it to the output image produced at previous step, and highlight the
+     * individual cells.
+     * Input
+     * Output of the step 1
+     * Single cell segmentation mask is found in ./data/single-cell-mask/single_cell_mask.tiff
+     * Output
+     * Output a single image in .png format with the highlighted cells
+     */
 
     std::vector<uint8_t> single_cell_mask;
     unsigned single_cell_mask_width, single_cell_mask_height;
@@ -149,11 +160,11 @@ int main(int argc, char *argv[])
 #endif
                 if (single_cell_mask.at(width * y + x))
                 {
-                    image[4 * width * y + 4 * x + 3] = 255;
+                    out_image_for_png[4 * width * y + 4 * x + 3] = 255;
                 }
                 else
                 {
-                    image[4 * width * y + 4 * x + 3] = 0;
+                    out_image_for_png[4 * width * y + 4 * x + 3] = 0;
                 }
             }
 #ifdef __NODEF__
@@ -166,17 +177,26 @@ int main(int argc, char *argv[])
         std::cout << "plt.show()" << std::endl;
 #endif
         std::string single_cell_mask_output_filename("2_output.png");
-        encodeOneStep(single_cell_mask_output_filename, image, width, height);
+        encodeOneStep(single_cell_mask_output_filename, out_image_for_png, width, height);
     }
 
-    //#######################################################  3
+    /**
+     * 3. Compute the mean of each channel
+     * For each cell indentified in step 2, compute the mean of each channel R,G,B.
+     * Input
+     * Output of step 2
+     * Output
+     * Output a .csv file. Each row should contains: Cell_id - from the single cell mask -, channel#1 mean value, channel#2
+     * mean value, channel#3 mean value
+     */
     std::map<std::string, std::map<uint16_t, double> > mean_by_color_by_cell_id;
     std::vector<uint16_t> cells_mask;
 
     readTIFF(cells_mask_filename, cells_mask, width, height);
 
     std::vector<uint16_t> cell_id;
-    ::solutions::calculate_channel_mean(mean_by_color_by_cell_id, image, cell_id, cells_mask, height, width);
+    ::solutions::calculate_channel_mean(mean_by_color_by_cell_id, out_image_for_png, cell_id, cells_mask, height,
+                                        width);
 
     std::ofstream out("3_output.csv");
     out << "Cell_id\t" << "channel#1\t" << "channel#2\t" << "channel#3" << std::endl;
@@ -201,4 +221,5 @@ int main(int argc, char *argv[])
     }
     out.close();
 }
+
 
