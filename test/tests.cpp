@@ -10,3 +10,12 @@ SCENARIO("first scenario ever created")
         REQUIRE(true);
     }
 }
+
+
+SCENARIO("this test is here to check continuous integration fails on make test failure")
+{
+    GIVEN("a false requirement")
+    {
+        REQUIRE(false);
+    }
+}
