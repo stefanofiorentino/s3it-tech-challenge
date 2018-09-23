@@ -1,0 +1,1 @@
+add_library(solutions SHARED calculate_channel_mean/calculate_channel_mean.cpp)

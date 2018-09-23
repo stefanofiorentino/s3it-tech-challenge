@@ -22,16 +22,10 @@ add_library(lodePNG
         src/etls/png/png_decoder.h
         )
 
-add_library(fioreTIFF
-        src/etls/tiff/tiff_decoder.cpp
-        src/etls/tiff/tiff_decoder.h
-        )
+add_subdirectory(src/solutions)
+add_subdirectory(src/etls/tiff)
+add_subdirectory(src/etls/png)
 
-add_library(solutions
-        src/solutions/calculate_channel_mean.cpp
-        )
-
-target_link_libraries(fioreTIFF tiff)
 
 add_executable(
         s3it-tech-challenge
@@ -40,10 +34,4 @@ add_executable(
 
 target_link_libraries(s3it-tech-challenge lodePNG fioreTIFF solutions boost_program_options)
 
-find_package(Catch2 REQUIRED)
-add_executable(s3it-tech-challenge-tester test/tests.cpp)
-target_link_libraries(s3it-tech-challenge-tester Catch2::Catch2)
-
-include(CTest)
-include(Catch)
-catch_discover_tests(s3it-tech-challenge-tester)
+add_subdirectory(test)

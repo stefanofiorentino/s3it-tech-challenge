@@ -4,14 +4,16 @@
 
 #include <string>
 #include <vector>
+#include <src/include/Error.hpp>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void readTIFF(std::string const &filename, std::vector<uint16_t> &image_out, uint32_t &width, uint32_t &height);
+    /// fwd declaration
+    Error readTIFF(std::string const &filename, std::vector<uint16_t> &image_out, uint32_t &width, uint32_t &height);
 
-void readSingleChannelMask(std::string const &filename, std::vector<uint8_t> &image_out, uint32_t &width,
+    void readSingleChannelMask(std::string const &filename, std::vector<uint8_t> &image_out, uint32_t &width,
                            uint32_t &height);
 
 #ifdef __cplusplus

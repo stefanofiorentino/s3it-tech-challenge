@@ -1,0 +1,1 @@
+add_library(fiorePNG SHARED png_decoder.cpp)

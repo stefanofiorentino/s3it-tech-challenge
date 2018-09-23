@@ -5,7 +5,9 @@
 #include <vector>
 #include <iostream>
 
-void readTIFF(std::string const &filename, std::vector<uint16_t> &image_out, uint32_t &width, uint32_t &height)
+#include "include/Error.hpp"
+
+Error readTIFF(std::string const &filename, std::vector<uint16_t> &image_out, uint32_t &width, uint32_t &height)
 {
     TIFF *tif = TIFFOpen(filename.c_str(), "r");
     if (tif)
@@ -16,8 +18,7 @@ void readTIFF(std::string const &filename, std::vector<uint16_t> &image_out, uin
         TIFFGetField(tif, TIFFTAG_SAMPLESPERPIXEL, &samples);
         if (bits != 16 || samples != 1)
         {
-            printf("The source image must be a 16bit single layer image.\n");
-            exit(1);
+            return TIFFWrongBitNumberError();
         }
 
         TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &width);
@@ -41,6 +42,11 @@ void readTIFF(std::string const &filename, std::vector<uint16_t> &image_out, uin
         _TIFFfree(buf);
 
         TIFFClose(tif);
+        return Error();
+    }
+    else
+    {
+        return TIFFWrongFormatError();
     }
 }
 

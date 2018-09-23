@@ -9,7 +9,7 @@
 #include <etls/png/png_decoder.h>
 #include <fstream>
 #include <numeric>
-#include <src/solutions/calculate_channel_mean.h>
+#include "solutions/calculate_channel_mean/calculate_channel_mean.h"
 
 int main(int argc, char *argv[])
 {
