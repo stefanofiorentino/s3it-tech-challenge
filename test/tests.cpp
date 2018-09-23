@@ -10,3 +10,17 @@ SCENARIO("first scenario ever created")
         REQUIRE(true);
     }
 }
+
+SCENARIO("load a TIFF")
+{
+    GIVEN("a TIFF single layer")
+    {
+        WHEN("the read utility is called")
+        {
+            THEN("the dimensions matches")
+            {
+
+            }
+        }
+    }
+}

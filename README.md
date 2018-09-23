@@ -39,10 +39,38 @@ The second lib is a tiny wrapper to the lodePNG https://www.lodev.org/lodepng/ l
 
     user (master) $> ./s3it-tech-challenge
 
+## Output
+The outputs can be found in the build folder. 
 
-# Mac OS users
+The results of the contest points 1, 2, 3 are respectively 1_output.png, 2_output.png and 3_output.csv.
+
+A convenient -o,--output_dir utility flag is under development.
+
+## Mac OS users
 After installing the dependencies as brew recipe, the software is fully compatible with Mac OS X command line terminal.
 
-# Windows users (under review)
+## Windows users (under review)
 The windows user should be able to build in Visual Studio just by installing dependencies with NuGET and producing the solution file with 
 > cmake -G "Visual Studio 11 2012" ../
+
+## Software APIs
+A fully portable API structure is under investigation. 
+
+A SWIG based interface is created in order to port the libraries to Java, Node.js and Python.
+
+## Restful web APIs
+A restful API structure is under investigation. 
+
+A C++ web server (based on www.github.com/ipkn/crow) can be exposed to public (customers) without the effort to ship working software as built executable.
+Not shipping code normally reduces patent infringement risks and software upgrade difficulties. 
+
+## Future needs
+Ability to export in TIFF.
+
+Ability to import in PNG.
+
+Ability to overlay more than 3 images (not visually trivial).
+
+Custom data structure shared among professionals at lab.
+
+Public web APIs to enhance collaboration and contracts.

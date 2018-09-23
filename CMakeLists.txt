@@ -18,23 +18,32 @@ include_directories(
 
 add_library(lodePNG
         src/libs/lodepng/lodepng.cpp
+        src/etls/png/png_decoder.cpp
+        src/etls/png/png_decoder.h
         )
+
+add_library(fioreTIFF
+        src/etls/tiff/tiff_decoder.cpp
+        src/etls/tiff/tiff_decoder.h
+        )
+
+add_library(solutions
+        src/solutions/calculate_channel_mean.cpp
+        )
+
+target_link_libraries(fioreTIFF tiff)
 
 add_executable(
         s3it-tech-challenge
         src/main.cpp
-        src/etls/png/png_decoder.cpp
-        src/etls/png/png_decoder.h
-        src/etls/tiff/tiff_decoder.cpp
-        src/etls/tiff/tiff_decoder.h
 )
 
-target_link_libraries(s3it-tech-challenge lodePNG tiff boost_program_options)
+target_link_libraries(s3it-tech-challenge lodePNG fioreTIFF solutions boost_program_options)
 
 find_package(Catch2 REQUIRED)
-add_executable(foo test/tests.cpp)
-target_link_libraries(foo Catch2::Catch2)
+add_executable(s3it-tech-challenge-tester test/tests.cpp)
+target_link_libraries(s3it-tech-challenge-tester Catch2::Catch2)
 
 include(CTest)
 include(Catch)
-catch_discover_tests(foo)
+catch_discover_tests(s3it-tech-challenge-tester)

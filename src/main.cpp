@@ -9,18 +9,15 @@
 #include <etls/png/png_decoder.h>
 #include <fstream>
 #include <numeric>
-
-using namespace boost::program_options;
-
-void on_age(int age)
-{
-    std::cout << "On age: " << age << '\n';
-}
+#include <src/solutions/calculate_channel_mean.h>
 
 int main(int argc, char *argv[])
 {
+    using namespace boost::program_options;
+
     std::vector<std::string> input_filename;
     std::string single_cell_mask_filename;
+    std::string cells_mask_filename;
 
     try
     {
@@ -32,7 +29,9 @@ int main(int argc, char *argv[])
                                                                                                        "../data/images/Fibronectin(Dy163Di).tiff")(
                 "bChannel", value<std::string>()->default_value("../data/images/HistoneH3(Yb176Di).tiff"),
                 "../data/images/HistoneH3(Yb176Di).tiff")("single_cell_mask", value<std::string>()->default_value(
-                "../data/single-cell-mask/single_cell_mask.tiff"), "../data/single-cell-mask/single_cell_mask.tiff");
+                "../data/single-cell-mask/single_cell_mask.tiff"), "../data/single-cell-mask/single_cell_mask.tiff")(
+                "cells_mask", value<std::string>()->default_value("../data/cells-mask/cells_mask.tiff"),
+                "../data/cells-mask/cells_mask.tiff");
         variables_map vm;
 
         store(parse_command_line(argc, argv, desc), vm);
@@ -62,11 +61,16 @@ int main(int argc, char *argv[])
         {
             std::cout << "single_cell_mask: " << vm["single_cell_mask"].as<std::string>() << '\n';
         }
+        if (vm.count("cells_mask"))
+        {
+            std::cout << "cells_mask: " << vm["cells_mask"].as<std::string>() << '\n';
+        }
 
         input_filename.emplace_back(vm["rChannel"].as<std::string>());
         input_filename.emplace_back(vm["gChannel"].as<std::string>());
         input_filename.emplace_back(vm["bChannel"].as<std::string>());
         single_cell_mask_filename = vm["single_cell_mask"].as<std::string>();
+        cells_mask_filename = vm["cells_mask"].as<std::string>();
     }
     catch (const error &ex)
     {
@@ -107,7 +111,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    std::string out_filename = "test.png";
+    std::string out_filename = "1_output.png";
 
     std::vector<unsigned char> image;
     image.resize(width * height * 4);
@@ -126,7 +130,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    encodeOneStep(out_filename.c_str(), image, width, height);
+    encodeOneStep(out_filename, image, width, height);
 
 #ifdef __NODEF__
     std::vector<unsigned char> expected_image;
@@ -175,62 +179,20 @@ int main(int argc, char *argv[])
         std::cout << "plt.imshow(img)" << std::endl;
         std::cout << "plt.show()" << std::endl;
 #endif
-        std::string single_cell_mask_output_filename("test2.png");
+        std::string single_cell_mask_output_filename("2_output.png");
         encodeOneStep(single_cell_mask_output_filename, image, width, height);
     }
 
     //#######################################################  3
-    // get how many valid mask values are there
     std::map<std::string, std::map<uint16_t, double> > mean_by_color_by_cell_id;
-
     std::vector<uint16_t> cells_mask;
-    readTIFF("../data/cells-mask/cells_mask.tiff", cells_mask, width, height);
+
+    readTIFF(cells_mask_filename, cells_mask, width, height);
 
     std::vector<uint16_t> cell_id;
-    for (unsigned y = 0; y < height; y++)
-    {
-        for (unsigned x = 0; x < width; x++)
-        {
-            auto cell_id_at_current_position = cells_mask.at(width * y + x);
-            if (cell_id_at_current_position > 0)
-            {
-                if (std::find(cell_id.cbegin(), cell_id.cend(), cell_id_at_current_position) ==
-                    cell_id.cend()) // cells_id doesn't contain cells_mask value
-                {
-                    // add cell_id to vector to avoid duplicates
-                    cell_id.emplace_back(cell_id_at_current_position);
+    ::solutions::calculate_channel_mean(mean_by_color_by_cell_id, image, cell_id, cells_mask, height, width);
 
-                    // create rChannel vector belonging to this cell_id
-                    std::vector<uint16_t> rChannel_by_cell_id;
-                    std::vector<uint16_t> gChannel_by_cell_id;
-                    std::vector<uint16_t> bChannel_by_cell_id;
-                    for (unsigned y1 = 0; y1 < height; y1++)
-                    {
-                        for (unsigned x1 = 0; x1 < width; x1++)
-                        {
-                            if (cells_mask.at(width * y1 + x1) == cell_id_at_current_position)
-                            {
-#ifdef __NODEF__
-                                std::cout << "x: " << x << ", y: " << y << ", x1: " << x1 << ", y1: " << y1
-                                          << std::endl;
-#endif
-                                rChannel_by_cell_id.emplace_back(image[4 * width * y1 + 4 * x1 + 0]);
-                                gChannel_by_cell_id.emplace_back(image[4 * width * y1 + 4 * x1 + 1]);
-                                bChannel_by_cell_id.emplace_back(image[4 * width * y1 + 4 * x1 + 2]);
-                            }
-                        }
-                    }
-                    mean_by_color_by_cell_id["R"][cell_id_at_current_position] = std::accumulate(rChannel_by_cell_id.cbegin(), rChannel_by_cell_id.cend(), 0.0) / rChannel_by_cell_id.size();
-                    mean_by_color_by_cell_id["G"][cell_id_at_current_position] = std::accumulate(gChannel_by_cell_id.cbegin(), gChannel_by_cell_id.cend(), 0.0) / gChannel_by_cell_id.size();
-                    mean_by_color_by_cell_id["B"][cell_id_at_current_position] = std::accumulate(bChannel_by_cell_id.cbegin(), bChannel_by_cell_id.cend(), 0.0) / bChannel_by_cell_id.size();
-                }
-            }
-
-        }
-    }
-
-
-    std::ofstream out("test.csv");
+    std::ofstream out("3_output.csv");
     out << "Cell_id\t" << "channel#1\t" << "channel#2\t" << "channel#3" << std::endl;
     if (cell_id.size() != mean_by_color_by_cell_id["R"].size())
     {
@@ -238,16 +200,19 @@ int main(int argc, char *argv[])
         out.close();
         return 1;
     }
+
 #ifdef __NODEF__
     std::cout << "Cell_id\t" << "channel#1\t" << "channel#2\t" << "channel#3" << std::endl;
 #endif
-    for (auto const& pair : mean_by_color_by_cell_id["R"])
+    for (auto const &pair : mean_by_color_by_cell_id["R"])
     {
-        auto const& cell = pair.first;
-        out << cell << "\t" << mean_by_color_by_cell_id["R"].at(cell) << "\t" << mean_by_color_by_cell_id["G"].at(cell)  << "\t" << mean_by_color_by_cell_id["B"].at(cell)  << std::endl;
+        auto const &cell = pair.first;
+        out << cell << "\t" << mean_by_color_by_cell_id["R"].at(cell) << "\t" << mean_by_color_by_cell_id["G"].at(cell)
+            << "\t" << mean_by_color_by_cell_id["B"].at(cell) << std::endl;
 #ifdef __NODEF__
         std::cout << cell << "\t" << mean_by_color_by_cell_id["R"].at(cell) << "\t" << mean_by_color_by_cell_id["G"].at(cell)  << "\t" << mean_by_color_by_cell_id["B"].at(cell)  << std::endl;
 #endif
     }
     out.close();
 }
+
