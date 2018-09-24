@@ -56,7 +56,9 @@ The windows user should be able to build in Visual Studio just by installing dep
 ## Docker 
 Are you onto a Mac or Windows machine and haven't experience with cmake? Inside the test folder you'll find a convenient Dockerfile you can build the product just entering in the commandline
 > cd test
+
 > docker build -t s3it-tech-challenge .
+
 > docker run --name s3it s3it
 
 ## Software APIs
