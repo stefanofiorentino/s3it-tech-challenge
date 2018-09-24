@@ -59,8 +59,6 @@ Are you onto a Mac or Windows machine and haven't experience with cmake? Inside 
 
 > docker build -t s3it-tech-challenge .
 
-> docker run --name s3it s3it
-
 ## Software APIs
 A fully portable API structure is under investigation. 
 
